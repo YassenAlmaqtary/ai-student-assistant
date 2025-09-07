@@ -1,0 +1,29 @@
+# Laravel
+laravel-app/vendor/
+laravel-app/.env
+laravel-app/storage/app/public/*
+laravel-app/storage/logs/*.log
+laravel-app/bootstrap/cache/*
+!laravel-app/storage/.gitignore
+!laravel-app/bootstrap/cache/.gitignore
+laravel-app/.phpunit.result.cache
+
+# Vue
+vue-app/node_modules/
+vue-app/.env
+vue-app/dist/
+
+# Python
+python-workers/venv/
+python-workers/.env
+__pycache__/
+python-workers/.pytest_cache/
+python-workers/__pycache__/
+
+# IDE / Editor
+.idea/
+.vscode/
+
+# System
+.DS_Store
+Thumbs.db

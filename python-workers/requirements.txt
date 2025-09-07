@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+celery
+pdfplumber
+pytesseract
+ffmpeg-python
+requests
+python-dotenv
+redis
+qdrant-client
