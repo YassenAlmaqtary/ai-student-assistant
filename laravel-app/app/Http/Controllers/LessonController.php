@@ -67,32 +67,42 @@ class LessonController extends Controller
 
     public function getUploadUrl(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'filename' => 'required',
             'type' => 'required|in:video,audio,pdf,image,doc',
         ]);
-        // هنا من المفترض توليد signed URL من MinIO
-        $path = 'uploads/' . uniqid() . '_' . $request->filename;
-        $upload_url = 'https://minio.local/' . $path; // استبدلها بتوليد حقيقي لاحقاً
-    return $this->ok(['upload_url' => $upload_url, 'path' => $path]);
+        $path = 'uploads/' . uniqid() . '_' . $validated['filename'];
+        $upload_url = null; // مؤقتاً نعطل الرفع المباشر حتى لا نفشل بـ CORS
+        return $this->ok(['upload_url' => $upload_url, 'path' => $path]);
+    }
+
+    public function directUpload(Request $request)
+    {
+        $validated = $request->validate([
+            'file' => 'required|file|max:51200', // 50MB
+            'type' => 'required|in:video,audio,pdf,image,doc',
+        ]);
+        $original = $request->file('file')->getClientOriginalName();
+        $storedPath = $request->file('file')->storeAs('uploads', uniqid().'_'.$original, 'public');
+        return $this->ok(['path' => $storedPath, 'original' => $original]);
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required',
             'path' => 'required',
             'type' => 'required|in:video,audio,pdf,image,doc',
         ]);
         $lesson = Lesson::create([
             'user_id' => $request->user()->id,
-            'title' => $request->title,
-            'type' => $request->type,
-            's3_path' => $request->path,
+            'title' => $validated['title'],
+            'type' => $validated['type'],
+            's3_path' => $validated['path'],
             'status' => 'pending',
         ]);
         ProcessLessonJob::dispatch($lesson->id);
-    return $this->ok(['lesson' => $lesson], 201);
+        return $this->ok(['lesson' => $lesson], 201);
     }
 
     public function reprocess(Request $request, Lesson $lesson)

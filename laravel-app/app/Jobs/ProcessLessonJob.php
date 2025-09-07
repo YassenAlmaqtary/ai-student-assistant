@@ -26,6 +26,28 @@ class ProcessLessonJob implements ShouldQueue
 
         if ($lesson->status === 'ready') return; // جاهز بالفعل
 
+        // محاولة إرسال المعالجة إلى الـ Python Worker أولاً (للـ PDF فقط حالياً)
+        if ($lesson->type === 'pdf') {
+            try {
+                $lesson->update(['status' => 'processing', 'processing_started_at' => now(), 'progress' => 5, 'failure_reason' => null]);
+                $workerUrl = env('WORKER_URL', 'http://localhost:8001');
+                $fullPath = storage_path('app/public/' . $lesson->s3_path); // حيث رفعنا الملف
+                if (is_file($fullPath)) {
+                    // إرسال طلب جدولة
+                    \Illuminate\Support\Facades\Http::timeout(8)->post(rtrim($workerUrl,'/').'/internal/task', [
+                        'action' => 'process_pdf',
+                        'lesson_id' => $lesson->id,
+                        'path' => $fullPath,
+                    ]);
+                    // نخرج وننتظر الـ webhook ليكمل (webhook سيغير الحالة إلى ready ويضيف transcript/chunks)
+                    return;
+                }
+            } catch (\Throwable $e) {
+                // فشل الإرسال—سنكمل بالمسار المحلي الوهمي أدناه
+                $lesson->update(['failure_reason' => 'worker dispatch failed: '.$e->getMessage()]);
+            }
+        }
+
         try {
             $lesson->update(['status' => 'processing', 'processing_started_at' => now(), 'progress' => 5, 'failure_reason' => null]);
 

@@ -9,6 +9,24 @@ use App\Models\Chunk;
 
 class QAController extends Controller
 {
+    public function sessions(Request $request, Lesson $lesson)
+    {
+        if ($lesson->user_id !== $request->user()->id) {
+            return $this->fail('غير مصرح', 403);
+        }
+        $items = QaSession::where('lesson_id', $lesson->id)
+            ->orderByDesc('id')
+            ->limit(50)
+            ->get()
+            ->map(fn($s) => [
+                'id' => $s->id,
+                'question' => $s->question,
+                'answer' => $s->answer,
+                'sources' => json_decode($s->sources, true),
+                'created_at' => $s->created_at?->toISOString(),
+            ]);
+        return $this->ok(['sessions' => $items]);
+    }
     public function answer(Request $request)
     {
         $data = $request->validate([
@@ -44,7 +62,13 @@ class QAController extends Controller
         return $this->ok([
             'answer' => $qa->answer,
             'sources' => json_decode($qa->sources, true),
-            'qa_session_id' => $qa->id,
+            'session' => [
+                'id' => $qa->id,
+                'question' => $qa->question,
+                'answer' => $qa->answer,
+                'sources' => json_decode($qa->sources, true),
+                'created_at' => $qa->created_at?->toISOString(),
+            ],
         ]);
     }
 }

@@ -11,9 +11,11 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/lessons/{lesson}/chunks', [App\Http\Controllers\LessonController::class, 'chunks']);
     Route::post('/lessons/{lesson}/reprocess', [App\Http\Controllers\LessonController::class, 'reprocess']);
     Route::post('/lessons/upload-url', [App\Http\Controllers\LessonController::class, 'getUploadUrl']);
+    Route::post('/lessons/direct-upload', [App\Http\Controllers\LessonController::class, 'directUpload']);
     Route::post('/lessons', [App\Http\Controllers\LessonController::class, 'store']);
     Route::post('/search', [App\Http\Controllers\SearchController::class, 'search'])->middleware('throttle:30,1');
     Route::post('/qa', [App\Http\Controllers\QAController::class, 'answer'])->middleware('throttle:15,1');
+    Route::get('/lessons/{lesson}/qa-sessions', [App\Http\Controllers\QAController::class, 'sessions']);
     Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout']);
     Route::post('/refresh', [App\Http\Controllers\AuthController::class, 'refresh']);
     Route::get('/me', [App\Http\Controllers\AuthController::class, 'me']);
